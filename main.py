@@ -23,7 +23,18 @@ def partition_pdf_file(file_path):
 
 chunks = partition_pdf_file(file_path)
 
+#Processing The Extracted Data
+def get_table(chunks):
+    tables = []
+    for chunk in chunks:
+        for el in chunk.metadata.original_elements:
+            if 'Table' in str(type(el)):
+                print(el.to_dict())
+                tables.append(el)
 
+    return tables
+
+tables = get_table(chunks) 
 
 
 
