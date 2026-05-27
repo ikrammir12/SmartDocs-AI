@@ -46,6 +46,18 @@ def save_texts(chunks):
 
 texts = save_texts(chunks)
 
+def get_image_base64(chunks):
+    '''Get the base64 encoded images from the chunks.'''
+    image_64 = []
+    for chunk in chunks:
+        chunk_el = chunk.metadata.original_elements
+        for el in chunk_el:
+            if 'Image' in str(type(el)):
+                image_64.append(el.metadata.image_base64)
+
+    return image_64
+
+images = get_image_base64(chunks)
 
 
 
