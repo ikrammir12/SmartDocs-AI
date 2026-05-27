@@ -37,5 +37,16 @@ def get_table(chunks):
 tables = get_table(chunks) 
 
 
+#Text and Images 
+
+def save_texts(chunks):
+    '''Extract text from the list of chunks.'''
+    texts = [chunk for chunk in chunks if 'CompositeElement' in str(type(chunk))]
+    return texts
+
+texts = save_texts(chunks)
+
+
+
 
 
