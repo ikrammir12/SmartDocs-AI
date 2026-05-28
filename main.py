@@ -122,3 +122,25 @@ prompt_image = ChatPromptTemplate.from_messages(messages)
 chain_image = prompt_image|model|StructuredOutputParser
 
 image_summaries = chain_image.batch(images)
+
+
+#Storing the summaries 
+#As we generated the summaries now this time to store them into the vector database for future retrieval and using them
+
+import uuid
+import os 
+from langchain_astradb import AstraDBVectorStore
+from langchain_core.embeddings import InMemoryStore
+from langchain.embeddings import OpenAIEmbeddings
+
+#Embedding model 
+embedding_model = OpenAIEmbeddings(
+    model = 'txt-embedding-004',
+    api_key = API_KEY,
+    base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
+)
+
+#text embeddings 
+query_result = embedding.embed_query('hellow')
+print(f'Query embedding: {query_result}')
+
