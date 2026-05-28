@@ -92,3 +92,33 @@ prompt_tamplate = ChatPromptTemplate.from_template(prompt)
 chain_text = prompt_tamplate|model|StructuredOutputParser
 
 text_summaries = chain_text.batch(texts,{'max_concurrency':3})
+
+
+#Image Summarization
+prompt_template_image ="""
+
+Describe the image in detail.
+Be specific about the articture ,graphs,plots such as bar plot"""
+
+messages =[
+    (
+        'user',
+        [
+            ##a text message containing our prompt instructions
+            {'type':'text','text':prompt_template_image},
+            ## an image message , passing the image as a base64-encoded URL
+            {
+            'type':'image_url',
+            "image_url":{"url":"data:image/jpeg;base64,{image}"},                          
+            },
+        ],
+    ),
+]
+
+##Create a ChatPromptTemplate Object form our structure messages
+prompt_image = ChatPromptTemplate.from_messages(messages)
+
+#chian the prompt with the gemini model and output parser
+chain_image = prompt_image|model|StructuredOutputParser
+
+image_summaries = chain_image.batch(images)
