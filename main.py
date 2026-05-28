@@ -144,3 +144,112 @@ embedding_model = OpenAIEmbeddings(
 query_result = embedding.embed_query('hellow')
 print(f'Query embedding: {query_result}')
 
+
+#MultivectoreRetriever
+from langchain.retrievers.multi_vector import MltiVectorRetriever
+
+#Initialize the retriever
+retriever = MltiVectorRetriever(
+    vectorstore = vector_store,
+    docstore = store,
+    id_key = id_key
+)
+
+# We step our vectore store and document store , Now will load
+#our text and image summaries
+
+from langchain_core.documents import Document
+
+#adding image and text summaries 
+
+def loading_summaries(retriever,chunks,chunk_summary):
+    """
+        Generate ids for each chunk, create langchain document object for each summary chunk.
+        Indexing the summary in vector store and document in docsotre.
+    """
+    ##Generate unique id for each chunk
+    doc_ids = [str(uuid.uuid4()) for _ in texts]
+    ##creating the langchain document object for each text_summary chunk
+    summary_texts = [Document(page_content=summary,metadata={id_key:doc_ids[i]}) for i,summary in enumerate(chunk_summary)]
+
+    ##indexing the doumnets in vectore store and documents store
+    retriever.vectorstore.add_documents(summary_texts)
+    retriever.docstore.mset(list(zip(doc_ids,chunks)))
+
+####Adding text summaries to the vectore store and document store
+loading_summaries_to_vector_store(retriever,texts,text_summaries)
+
+##Adding imae summaries to vectore store and document store
+loading_summaries_to_vector_store(retriever,images,image_summaries)
+##now the retriver is to ready
+
+#Creating The RAG chain
+"""
+with our data stored , We can now build the rag chain , This chain
+will  orchestrate the entire process , from recining query to generating the response ."""
+#Helper Funcation
+
+from langchain_core.runnables import RunnablePassthrough,RunnableLambda
+from langchain_core.messages import SystemMessage,HumanMessage
+from langchain_openai import ChatOpenAI
+from base64 import b64decode
+
+def parse_docs(docs):
+    """Parses the retrieved documents to reture a dictionary with text and images."""
+    image_doc = []
+    text_doc = []
+    for doc in docs:
+        try:
+            ##Attempt to decode the document as an image
+            b64decode(doc)
+            ## If successful , appened to image_doc
+            image_doc.append(doc)
+
+        ## Raises binascii.Error if not a base64
+        except Exception as e:
+            ##if decoding fails , treat it as text 
+            text_doc.append(doc)
+
+    return {'images':image_doc,'text':text_doc}
+
+
+def built_prompt(kwargs):
+    """Builds the prompt for the LLM based on the model using the context and question."""
+
+    ##extracting the context dictionary
+    docs_by_type = kwargs['context']
+    ##extracting the questions
+    user_question = kwargs['question']
+
+    ##if the length of text documents is greater than 0, concatenate the text
+    context_text = ''
+    if len(docs_by_type['text']) >0:
+        for text_element in docs_by_type['text']:
+            context_text += text_element.text
+
+
+    ##Create a prompt with context including the images
+    prompt_template = f"""
+    Answer the question based only on the following context, which can include text and images.            
+    Context : {context_text}
+    Question : {user_question}""" 
+    
+
+    prompt_content = [{"type":"text","text":prompt_template}]
+
+    ##if there are images , add them to the prompt 
+
+    if len(docs_by_type['images']) >0:
+        for image in docs_by_type['images']:
+            prompt_content.append(
+                {"type":"image_url","image_url":{"url":f"data:image/jpeg;base64,{image}"},
+            }
+            )
+
+    ##return the prompt content
+    return ChatPromptTemplate.from_messages(
+        [HumanMessage(content=prompt_content)]
+    )        
+
+
+            
