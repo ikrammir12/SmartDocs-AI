@@ -59,6 +59,36 @@ def get_image_base64(chunks):
 
 images = get_image_base64(chunks)
 
+#Image and Text Summarization
+
+from langchain_openai import ChatOpenAI
+from langchain.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StructuredOutputParser
+
+##Summarize Text
+##create an openAi model 
+from dotenv import load_dotenv
+import os 
+load_dotenv(override=True)
+API_KEY = os.getenv('GEMINI_API_KEY')
+model = ChatOpenAI(api_key = API_KEY , model='gemini-2.5-flash',base_url='https://generativelanguage.googleapis.com/v1beta2/models/gemini-2.5-flash:generateContent', temperature=0.7)
+
+##Create the prompt template for summarization
+prompt = """
+Your are an assistant tasked with summarizing tables and text.
+Give a concise summary of the table or text.
+
+Respond only with the summary ,no additional comment.
+Do not start your message by saying 'Here is a summary' or anythings like that.
+Just give the summary as it is.
+Table or text chunk:{element}
+
+"""
 
 
+prompt_tamplate = ChatPromptTemplate.from_template(prompt)
 
+#Chain the prompt with the gemini model and output parser
+chain_text = prompt_tamplate|model|StructuredOutputParser
+
+text_summaries = chain_text.batch(texts,{'max_concurrency':3})
