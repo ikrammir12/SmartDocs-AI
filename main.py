@@ -287,6 +287,32 @@ chain_with_source = {
     )
 )
 
+#Generating a Response and Verifying the Source
 
+import base64
+from IPython.display import Image, display
+def display_base64_image(base64_code):
+    ##decode the base64 string to binary
+    image_data = base64.b64decode(base64_code)
+    #display the image
+    display(Image(data=image_data))
+
+
+#Assuming 'response' is the output of chain_with_source.invoke("Your question here")
+response = chain_with_source.invoke('What is the summary of the document?')
+
+##print the response and source documents
+print('Response:',response['response'],"\n")
+print("-"*80,"\n\nSource Douments:")
+
+##print thesource text 
+for text in response['context']['text']:
+    print('page Number:',text.metadata.page_number)
+    print(text.text)
+    print("-"*80)
+
+##source Images
+for image in response['context']['image']:
+    display_base64_image(image)   
  
             
