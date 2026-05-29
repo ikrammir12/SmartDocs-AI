@@ -252,4 +252,41 @@ def built_prompt(kwargs):
     )        
 
 
+#Time to create the rage chain , in which i will combine the output from 
+#model and Give the answer plus the documents that the model 
+#used to generate the repsonse
+
+from langchain_core.output_parsers import StrOutputParser
+
+#the first chain gives a direct output
+
+output_chain = (
+    {
+        ##Retriver will retrieve returns the retrieve document which we saw above when we invoked the retriever
+        ##Then that will be passes to the parse_docs which will go over each document and parse it into text and images
+        "context":retriever | RunnableLambda(parse_docs),
+        "question":RunnablePassthrough(),
+    }
+    ##build_prompt will get the context which is a dictionary with text and images, and the question
+    |RunnableLambda(built_prompt)
+    |model
+    |StrOutputParser()
+
+)
+##building the chain with the source reference 
+# This will retunr a dictionary with the context , question, and the response from the model
+chain_with_source = {
+    'context':retriever | RunnableLambda(parse_docs)
+    'question': RunnablePassthrough(),
+
+} | RunnablePassthrough().assign(
+    response = (
+        RunnableLambda(built_prompt)
+        |ChatOpenAI(model='gemini-2.5-flash')
+        |StrOutputParser()
+    )
+)
+
+
+ 
             
